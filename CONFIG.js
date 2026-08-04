@@ -8,7 +8,7 @@ window.APP_CONFIG = {
   SEATABLE: {
     SERVER_URL:  'https://cloud.seatable.io',
     BASE_UUID:   '346a92cd-fa80-4357-a65d-b282cbe43b51',
-    APP_TOKEN:   'cd295cdaa449c5c46c453e129973c0dd6ad29f54',
+    APP_TOKEN:   'ae45bc8027c11ec525d015dafc5f4ef7041af465',
     TABLA_USUARIOS:   'Usuarios',
     TABLA_ASISTENCIA: 'Asistencia'
   }
