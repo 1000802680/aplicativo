@@ -3,5 +3,6 @@
    ============================================================ */
 
 window.APP_CONFIG = {
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzcTA2JdmFowDnO6rDSQshDDwO4faJlUTSwniS0S_zxRBI4Vvheq697zTMAYlf3ASD6/exec'
+  APPS_SCRIPT_URL: 'https://docs.google.com/spreadsheets/d/1zOttNV1TFjdqJU3hrOCYAda6nCSzExuQ6EOZfz7x6hk/edit?usp=sharing'
 };
+
