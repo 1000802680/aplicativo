@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="styles.css?v=20260803C">
+  <link rel="stylesheet" href="styles.css?v=ST-03082026-8PM">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -547,54 +547,85 @@
 <!-- ============================================================= -->
 <div id="qrModalHost"></div>
 
-  <script src="CONFIG.js?v=V2-20260803D"></script>
-  <script src="app.js?v=V2-20260803D"></script>
+  <script src="CONFIG.js?v=ST-03082026-8PM"></script>
+  <script src="app.js?v=ST-03082026-8PM"></script>
 <script>
 (function(){
   try {
-    var cfg = (window.APP_CONFIG && window.APP_CONFIG.APPS_SCRIPT_URL) ? window.APP_CONFIG.APPS_SCRIPT_URL : '';
-    var banner = document.createElement('div');
-    var fondo, borde, color;
-    var nivel;
+    var modo = 'VACÍO';
+    var cfg0 = window.APP_CONFIG || {};
+    var fondo, borde, color, nivel, contenidoHtml;
+    var esSeatable = !!(cfg0.SEATABLE && (String(cfg0.SEATABLE.APP_TOKEN||'').length>6) && (String(cfg0.SEATABLE.BASE_UUID||'').length>10));
+    var urlApps = String(cfg0.APPS_SCRIPT_URL||'').trim();
+    var esAppsOk = (urlApps.length>20 && /script\.google\.com.*\/exec$/i.test(urlApps));
 
-    if (!cfg) {
+    if (!cfg0 || (!esSeatable && !esAppsOk && !urlApps)) {
+      modo = 'CONFIG.js INDEFINIDO / VACÍO';
       nivel = 'ERROR';
-      fondo = 'linear-gradient(135deg,#b91c1c,#ef4444)'; borde = '#7f1d1d'; color='white';
-    } else {
-      // Detectar si la URL que CARGÓ es la BUENA (la nueva con AKfycbzcTA2JdmFowDnO6rDSQshDDwO4faJlUTSwniS0S_zxRBI4Vvheq697zTMAYlf3ASD6)
-      var esBuena = /AKfycbzcTA2JdmFowDnO6rDSQshDDwO4faJlUTSwniS0S_zxRBI4Vvheq697zTMAYlf3ASD6/.test(cfg);
-      var esVieja = /AKfycbxdfadm8o8PVWB2uHyz7GUehtVBe0e08ggy1NUsgcVJR5MLWP19zZn10FWD_gin20Jn7g/.test(cfg);
-      if (esBuena) {
-        nivel = 'OK';
-        fondo = 'linear-gradient(135deg,#047857,#10b981)'; borde = '#065f46'; color = 'white';
-      } else if (esVieja) {
-        nivel = 'URL VIEJA (caché)';
-        fondo = 'linear-gradient(135deg,#b45309,#f59e0b)'; borde = '#78350f'; color = 'white';
+      fondo='linear-gradient(135deg,#b91c1c,#ef4444)'; borde='#7f1d1d'; color='white';
+      contenidoHtml =
+        '<div style="margin-top:6px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.25);font-family:ui-monospace,Consolas,monospace;font-size:12px;font-style:italic">⚠️ window.APP_CONFIG no está definido. CONFIG.js NO se cargó. Causa: caché vieja de GitHub Pages.</div>' +
+        '<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.22);font-size:12.5px"><b>💡 SOLUCIÓN:</b> cierra TODAS las pestañas <code>github.io</code> → abre PESTAÑA NUEVA → pega tu URL GitHub + <code style="background:rgba(255,255,255,.18);padding:2px 6px;border-radius:6px">?v=ST-'+Date.now()+'</code> → Enter.</div>';
+    } else if (esSeatable) {
+      modo = '🧭 MODO SEATABLE DIRECTO (SIN GOOGLE APPS SCRIPT)';
+      var ST = cfg0.SEATABLE;
+      var tokenLen = String(ST.APP_TOKEN||'').length;
+      var uuidFmt  = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(String(ST.BASE_UUID||''));
+      var serverValido = /^https:\/\/[a-z0-9\.-]+(:[0-9]+)?$/i.test(String(ST.SERVER_URL||''));
+      var tablasOk = (String(ST.TABLA_USUARIOS||'').length>=5) && (String(ST.TABLA_ASISTENCIA||'').length>=5);
+
+      if (tokenLen>=36 && uuidFmt && serverValido && tablasOk) {
+        nivel='OK CONFIGURACIÓN SEATABLE';
+        fondo='linear-gradient(135deg,#047857,#10b981)'; borde='#065f46'; color='white';
       } else {
-        nivel = 'URL DESCONOCIDA — COMPRUEBA QUE SEA LA CORRECTA';
-        fondo = 'linear-gradient(135deg,#7c2d12,#ea580c)'; borde = '#431407'; color = 'white';
+        nivel='CONFIG SEATABLE INCOMPLETA';
+        fondo='linear-gradient(135deg,#b45309,#f59e0b)'; borde='#78350f'; color='white';
       }
+      var maskTok = String(ST.APP_TOKEN||'').slice(0,6)+'••••••••••'+String(ST.APP_TOKEN||'').slice(-4);
+      contenidoHtml =
+        '<div style="margin-top:6px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.25);font-family:ui-monospace,Consolas,monospace;font-size:12px">' +
+          '<div>🖥️ Servidor: <b>'+String(ST.SERVER_URL||'(vacío)')+'</b> &nbsp; <span style="opacity:.75">('+(serverValido?'✅ URL válida':'❌ URL inválida')+')</span></div>' +
+          '<div style="margin-top:4px">📦 Base UUID:   <b>'+String(ST.BASE_UUID||'(vacío)')+'</b> &nbsp; <span style="opacity:.75">('+(uuidFmt?'✅ formato UUID':'❌ NO es UUID válido')+')</span></div>' +
+          '<div style="margin-top:4px">🔑 API Token:   <b>'+maskTok+'</b> &nbsp; <span style="opacity:.75">('+tokenLen+' chars, '+(tokenLen>=36?'✅ OK':'❌ muy corto')+')</span></div>' +
+          '<div style="margin-top:4px">📘 Tabla Usuarios:     <b>'+escHtml(ST.TABLA_USUARIOS||'(vacío)')+'</b></div>' +
+          '<div style="margin-top:2px">📗 Tabla Asistencia: <b>'+escHtml(ST.TABLA_ASISTENCIA||'(vacío)')+'</b></div>' +
+        '</div>' +
+        (nivel !== 'OK CONFIGURACIÓN SEATABLE'
+          ? '<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.22);font-size:12.5px"><b>💡 Revisa CONFIG.js en GitHub:</b> SERVER_URL empieza por <code>https://</code>, BASE_UUID tiene formato UUID-8-4-4-4-12, APP_TOKEN ≥ 36 chars y nombres de tablas no están vacíos.</div>'
+          : '<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.18);font-size:12.5px"><b>🎯 Si la conexión con SeaTable FALLA:</b> revisa en SeaTable → API tokens que el token tenga permiso <b>Lectura + Escritura</b> y las tablas <b>'+escHtml(ST.TABLA_USUARIOS)+'</b> y <b>'+escHtml(ST.TABLA_ASISTENCIA)+'</b> existen con las columnas exactas.</div>');
+    } else {
+      // MODO APPS SCRIPT (anterior)
+      modo = '🌐 MODO GOOGLE APPS SCRIPT';
+      var esBuena = /AKfycbzcTA2JdmFowDnO6rDSQshDDwO4faJlUTSwniS0S_zxRBI4Vvheq697zTMAYlf3ASD6/.test(urlApps);
+      var esVieja = /AKfycbxdfadm8o8PVWB2uHyz7GUehtVBe0e08ggy1NUsgcVJR5MLWP19zZn10FWD_gin20Jn7g/.test(urlApps);
+      if (esBuena) { nivel='OK Apps Script'; fondo='linear-gradient(135deg,#047857,#10b981)'; borde='#065f46'; color='white'; }
+      else if (esVieja) { nivel='URL Apps Script VIEJA'; fondo='linear-gradient(135deg,#b45309,#f59e0b)'; borde='#78350f'; color='white'; }
+      else if (esAppsOk){ nivel='URL Apps Script'; fondo='linear-gradient(135deg,#7c2d12,#ea580c)'; borde='#431407'; color='white'; }
+      else { nivel='URL Apps Script INVÁLIDA'; fondo='linear-gradient(135deg,#b91c1c,#ef4444)'; borde='#7f1d1d'; color='white'; }
+      contenidoHtml =
+        '<div style="margin-top:6px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.25);font-family:ui-monospace,Consolas,monospace;font-size:12px;word-break:break-word">'+urlApps+'</div>' +
+        ((nivel.includes('OK'))
+          ? ''
+          : '<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.22);font-size:12.5px"><b>💡 SOLUCIÓN:</b> cierra pestañas <code>github.io</code> → abre nueva → añade <code style="background:rgba(255,255,255,.18);padding:2px 6px;border-radius:6px">?v=R-'+Date.now()+'</code> → Enter.</div>');
     }
 
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999999;background:'+fondo+';color:'+color+';font-family:Inter,Arial,sans-serif;padding:16px 20px 18px 20px;font-size:13.5px;line-height:1.75;box-shadow:0 22px 44px rgba(0,0,0,.45);border-bottom:5px solid '+borde+';word-break:break-word';
-    var htmlUrl = cfg
-      ? '<div style="margin-top:6px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.25);font-family:ui-monospace,Consolas,monospace;font-size:12px;letter-spacing:.2px">'+cfg+'</div>'
-      : '<div style="margin-top:6px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.25);font-family:ui-monospace,Consolas,monospace;font-size:12px;font-style:italic">⚠️ (CONFIG.js NO se cargó. Tu navegador tiene caché vieja de GitHub Pages.)</div>';
+    function escHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
+    var banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999999;background:'+fondo+';color:'+color+';font-family:Inter,Arial,sans-serif;padding:16px 20px 18px 20px;font-size:13.5px;line-height:1.75;box-shadow:0 22px 44px rgba(0,0,0,.45);border-bottom:5px solid '+borde+';word-break:break-word';
     banner.innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
-        '<div style="flex:1"><b style="font-size:17px">� ESTADO URL ACTIVA CONFIG.js ['+nivel+']</b><br>' +
-        '<small style="opacity:.92">Ésta es la URL QUE TU NAVEGADOR REALMENTE está usando (no lo que crees que subiste a GitHub). Si no coincide, es caché.</small>' +
-        htmlUrl +
-        (cfg && nivel !== 'OK'
-          ? '<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.22);font-size:12.5px"><b>💡 SOLUCIÓN:</b> cierra <u>todas</u> las pestañas abiertas de <code>github.io</code> → abre una PESTAÑA NUEVA → pega tu URL GitHub AÑADIENDO al final: <code style="background:rgba(255,255,255,.18);padding:2px 6px;border-radius:6px">?v=R-'+Date.now()+'</code> → pulsa Enter.</div>'
-          : '') +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">' +
+        '<div style="flex:1">' +
+          '<b style="font-size:17px">🔍 '+modo+' — ['+nivel+']</b><br>' +
+          '<small style="opacity:.92">Estado REAL de la configuración que cargó tu navegador (no lo que crees que subiste).</small>' +
+          contenidoHtml +
         '</div>' +
         '<button onclick="this.parentElement.parentElement.remove()" style="flex-shrink:0;padding:6px 10px;border-radius:8px;border:0;background:rgba(255,255,255,.18);color:white;font-weight:700;cursor:pointer">Cerrar ✕</button>' +
       '</div>';
-
     document.body.appendChild(banner);
-  } catch(e){}
+  } catch(e){
+    try { console.error('banner detector falló:', e); } catch(_){}
+  }
 })();
 </script>
 </body>
