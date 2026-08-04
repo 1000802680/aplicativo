@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Asistencia QR</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" href="styles.css?v=20260803C">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+</head>
+<body>
+
+<!-- ============================================================= -->
+<!-- LOADING OVERLAY                                               -->
+<!-- ============================================================= -->
+<div id="loading" class="loading-overlay hidden">
+  <div class="loading-box"><div class="spinner"></div><div class="loading-text" id="loadingText">Cargando...</div></div>
+</div>
+<div id="toastHost"></div>
+
+<!-- ============================================================= -->
+<!-- VIEW: LOGIN                                                   -->
+<!-- ============================================================= -->
+<div id="viewLogin" class="login-wrap">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="login-brand">
+        <div class="login-logo">CG</div>
+      </div>
+      <h1>Control de Asistencia QR</h1>
+      <p id="loginSubtitle">Conceptos Gráficos S.A. · Iniciar Sesión</p>
+    </div>
+
+    <!-- Switcher tabs -->
+    <div style="display:flex;gap:4px;padding:0 28px;margin-top:14px">
+      <button id="tabLoginMode" class="tab-btn active" style="flex:1;border-bottom:2px solid var(--navy-600)">
+        &#128274; Iniciar Sesión
+      </button>
+      <button id="tabRegMode" class="tab-btn" style="flex:1;color:var(--slate-500)">
+        &#10133; Regístrame
+      </button>
+    </div>
+
+    <div class="login-body">
+      <div id="loginError" class="login-error"></div>
+
+      <!-- ====== FORMULARIO DE INICIO DE SESIÓN ====== -->
+      <form id="loginForm" onsubmit="return false;">
+        <div class="form-group">
+          <label for="loginCedula">Número de Cédula</label>
+          <div class="input-icon">
+            <span class="ic">&#128100;</span>
+            <input id="loginCedula" type="text" class="form-control" placeholder="Ej: 1001001001" inputmode="numeric" autocomplete="username">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="loginPin">PIN de Acceso</label>
+          <div class="input-icon">
+            <span class="ic">&#128272;</span>
+            <input id="loginPin" type="password" class="form-control" placeholder="4 dígitos" inputmode="numeric" maxlength="8" autocomplete="current-password">
+          </div>
+        </div>
+        <div style="height:6px"></div>
+        <button id="btnLogin" class="btn btn-primary btn-lg btn-block" type="submit">
+          &#128274; Iniciar Sesión
+        </button>
+      </form>
+
+      <!-- ====== FORMULARIO DE AUTO-REGISTRO ====== -->
+      <form id="regForm" onsubmit="return false;" class="hidden">
+        <div class="form-group">
+          <label for="regCedula">Número de Cédula</label>
+          <div class="input-icon">
+            <span class="ic">&#128100;</span>
+            <input id="regCedula" type="text" class="form-control" placeholder="Tu número de identificación" inputmode="numeric">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="regNombre">Nombre Completo</label>
+          <div class="input-icon">
+            <span class="ic">&#9998;</span>
+            <input id="regNombre" type="text" class="form-control" placeholder="Nombres y Apellidos">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="regCargo">Cargo / Área (opcional)</label>
+          <div class="input-icon">
+            <span class="ic">&#127970;</span>
+            <input id="regCargo" type="text" class="form-control" placeholder="Ej: Diseñador, Producción...">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="regPin">Crea tu PIN (4 dígitos)</label>
+            <div class="input-icon">
+              <span class="ic">&#128272;</span>
+              <input id="regPin" type="password" class="form-control" placeholder="Ej: 2026" inputmode="numeric" maxlength="8">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="regPin2">Confirma tu PIN</label>
+            <div class="input-icon">
+              <span class="ic">&#10004;</span>
+              <input id="regPin2" type="password" class="form-control" placeholder="Repite el PIN" inputmode="numeric" maxlength="8">
+            </div>
+          </div>
+        </div>
+        <div style="padding:8px 10px;background:var(--navy-50);border:1px solid #bfdbfe;border-radius:8px;font-size:11.5px;color:var(--navy-700);font-weight:600;margin-bottom:12px;line-height:1.5">
+          &#9432; Al registrarte, serás dado de alta como <b>TRABAJADOR</b> y se generará tu código QR único. Se guardarán tus datos en la hoja de cálculo de la empresa.
+        </div>
+        <button id="btnRegistrar" class="btn btn-purple btn-lg btn-block" type="submit">
+          &#10133; Crear mi Cuenta
+        </button>
+      </form>
+    </div>
+
+    <div class="login-footer" id="loginFooterLogin">
+      <b style="color:var(--slate-700)">Credenciales iniciales de prueba</b><br>
+      Admin · <b>Cédula 1234567890</b> / <b>PIN 1234</b><br>
+      Trabajador · <b>Cédula 1001001001</b> / <b>PIN 2024</b>
+      <div style="margin-top:14px">
+        <button type="button" class="btn-red-outline" style="width:100%;padding:12px;font-weight:700;font-size:14.5px" onclick="diagnosticarBackend()">
+          &#129658; Diagnosticar conexión con Google Apps Script
+        </button>
+      </div>
+      <div style="margin-top:10px;font-size:11.5px;color:#64748b;text-align:left;line-height:1.6">
+        <b style="color:#ef4444">⚠️ Si no puedes iniciar sesión:</b> pulsa el botón rojo de arriba.
+        En 30 segundos te dirá EXACTAMENTE qué está fallando (la URL, permisos del despliegue, CORS, etc.) y
+        te da los pasos exactos para arreglarlo.
+      </div>
+    </div>
+    <div class="login-footer hidden" id="loginFooterReg" style="font-size:11.5px">
+      <b style="color:var(--slate-700)">¿Ya tienes cuenta?</b><br>
+      Pulsa la pestaña <b>"Iniciar Sesión"</b> de arriba.
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- VIEW: APP (post-login)                                        -->
+<!-- ============================================================= -->
+<div id="viewApp" class="hidden">
+
+  <header class="app-header">
+    <div class="inner">
+      <div class="brand">
+        <div class="brand-logo">CG</div>
+        <div>
+          <h1>Control de Asistencia QR</h1>
+          <p>Conceptos Gráficos · Google Sheets Backend</p>
+        </div>
+      </div>
+      <div class="user-area">
+        <div class="clock">
+          <div id="clock-time" class="clock-time">--:--:--</div>
+          <div id="clock-date" class="clock-date">--/--/----</div>
+        </div>
+        <div class="user-chip">
+          <div id="myAvatar" class="user-avatar">?</div>
+          <div class="who">
+            <b id="myName">Usuario</b>
+            <small id="myRole" class="role-badge user">TRABAJADOR</small>
+          </div>
+        </div>
+        <button id="btnLogout" class="btn btn-outline-secondary" style="color:white;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.06)">
+          &#128682; Salir
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- TABS (Admin tiene 5, Trabajador tiene 3) -->
+    <div id="tabsBar" class="tabs-bar">
+      <!-- Admin tabs: dashboard, scanner, usuarios, asistencia, miqr -->
+      <!-- User tabs : dashboard, miqr, miasistencia -->
+    </div>
+
+    <!-- ============ TAB: DASHBOARD (todos) ============ -->
+    <section id="tab-dashboard" class="tab-view active panel">
+      <div class="panel-head"><h2><span class="ic">&#128202;</span> Panel Principal</h2>
+        <div class="panel-actions">
+          <span id="dashSubtitle" style="font-size:12px;color:var(--slate-500);font-weight:600"></span>
+        </div>
+      </div>
+      <div class="panel-body">
+
+        <!-- ========== PANEL INFORMATIVO: DÓNDE SE GUARDAN LOS DATOS ========== -->
+        <div id="sheetInfoCard" style="display:none;margin-bottom:18px;padding:18px 20px;border-radius:14px;background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1.5px solid #bfdbfe;box-shadow:0 4px 14px rgba(30,64,175,.06)">
+          <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+            <div style="font-size:28px">📊</div>
+            <div style="flex:1;min-width:260px">
+              <div style="font-size:14px;font-weight:800;color:#1e3a8a;margin-bottom:4px">
+                Tus datos se están guardando EN ESTA HOJA DE CÁLCULO:
+              </div>
+              <div style="font-size:12.5px;color:#475569;margin-bottom:8px;line-height:1.6">
+                Todos los usuarios, códigos QR y registros de asistencia se almacenan automáticamente en:
+              </div>
+              <a id="sheetLinkUrl" href="#" target="_blank" rel="noopener" style="font-size:13px;font-weight:700;color:#1d4ed8;word-break:break-all;text-decoration:underline">
+                Abrir hoja de cálculo en nueva pestaña ↗
+              </a>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+                <div style="flex:1;min-width:180px;padding:10px 12px;border-radius:10px;background:white;border:1px solid #c7d2fe">
+                  <div style="font-size:10.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.3px">Usuarios registrados</div>
+                  <div style="font-size:20px;font-weight:800;color:#0f2847;margin-top:2px"><span id="sInfoUsers">0</span></div>
+                </div>
+                <div style="flex:1;min-width:180px;padding:10px 12px;border-radius:10px;background:white;border:1px solid #c7d2fe">
+                  <div style="font-size:10.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.3px">Registros de asistencia</div>
+                  <div style="font-size:20px;font-weight:800;color:#0f2847;margin-top:2px"><span id="sInfoAsis">0</span></div>
+                </div>
+                <div style="padding:10px 12px;border-radius:10px;background:white;border:1px solid #c7d2fe;align-self:stretch">
+                  <div style="font-size:10.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.3px">Zona horaria</div>
+                  <div style="font-size:12.5px;font-weight:700;color:#0f2847;margin-top:4px" id="sInfoTz">—</div>
+                </div>
+                <div style="align-self:center;display:flex;gap:6px;flex-wrap:wrap">
+                  <button id="btnSyncSheet" class="btn btn-outline-secondary" style="white-space:nowrap">
+                    🔄 Sincronizar / Reparar
+                  </button>
+                  <button id="btnDiagnosticar" class="btn btn-purple" style="white-space:nowrap">
+                    🩺 Diagnosticar Conexión
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="statsRow" class="stats-row">
+          <div class="stat-card stat-a"><div class="stat-ic">&#128197;</div><div><div class="stat-lbl">Registros Hoy</div><div class="stat-val" id="s1">0</div></div></div>
+          <div class="stat-card stat-b"><div class="stat-ic">&#9989;</div><div><div class="stat-lbl">Entradas Hoy</div><div class="stat-val" id="s2">0</div></div></div>
+          <div class="stat-card stat-c"><div class="stat-ic">&#128682;</div><div><div class="stat-lbl">Salidas Hoy</div><div class="stat-val" id="s3">0</div></div></div>
+          <div class="stat-card stat-d"><div class="stat-ic">&#128101;</div><div><div class="stat-lbl" id="s4lbl">Total Usuarios</div><div class="stat-val" id="s4">0</div></div></div>
+        </div>
+
+        <div class="panel" style="box-shadow:none;border-color:var(--slate-200);margin-bottom:0">
+          <div class="panel-head" style="border-radius:14px 14px 0 0"><h2><span class="ic">&#9201;</span> Registro Manual (Rápido)</h2></div>
+          <div class="panel-body">
+            <div id="quickAdmin" class="quick-row">
+              <div class="form-group">
+                <label>Trabajador</label>
+                <select id="quickUser" class="form-control"><option value="">-- Seleccionar --</option></select>
+              </div>
+              <div class="form-group">
+                <label>Tipo de Registro</label>
+                <div class="radio-group">
+                  <label class="radio-opt radio-e">
+                    <input type="radio" name="quickTipo" value="ENTRADA" checked>
+                    <span class="radio-dot"></span><span class="radio-lbl">Entrada</span>
+                  </label>
+                  <label class="radio-opt radio-s">
+                    <input type="radio" name="quickTipo" value="SALIDA">
+                    <span class="radio-dot"></span><span class="radio-lbl">Salida</span>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <button id="btnQuickReg" class="btn btn-primary btn-lg">Registrar</button>
+              </div>
+            </div>
+            <div id="quickUser" class="quick-row hidden" style="grid-template-columns:1fr auto">
+              <div style="padding:11px 14px;background:var(--navy-50);border-radius:10px;border:1px solid var(--navy-200,#e0efff);font-weight:600;color:var(--navy-800);font-size:13px" id="myQuickInfo"></div>
+              <div style="display:flex;gap:8px">
+                <button id="btnMyEntrada" class="btn btn-green">&#128308; Marcar Entrada</button>
+                <button id="btnMySalida"  class="btn btn-red">&#128308; Marcar Salida</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ TAB: QR SCANNER (admin) ============ -->
+    <section id="tab-scanner" class="tab-view panel">
+      <div class="panel-head"><h2><span class="ic">&#128247;</span> Escaner QR de Asistencia</h2>
+        <div class="panel-actions"><span style="font-size:12px;color:var(--slate-500);font-weight:600">Registra entrada / salida del trabajador</span></div>
+      </div>
+      <div class="panel-body">
+        <!-- ============ BANNER PRINCIPAL: MÉTODO RECOMENDADO ============ -->
+        <div style="padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,#059669,#10b981);color:white;box-shadow:0 10px 30px rgba(5,150,105,.2);border:1.5px solid #10b981;margin-bottom:16px">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.2);display:inline-flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📸</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:15px;font-weight:900;margin-bottom:4px">✅ MÉTODO PRINCIPAL (funciona SIEMPRE en Google Apps Script)</div>
+              <div style="font-size:12.5px;line-height:1.65;opacity:.96;margin-bottom:10px">
+                Pulsa <b>TOMAR FOTO QR</b> → se abre la cámara de tu celular/laptop DIRECTAMENTE → enfoca el QR → captura la foto.
+                No usa streaming, no sufre bloqueos del iframe sandbox de Google. Es el método que <b style="text-decoration:underline">SIEMPRE FUNCIONA</b>.
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <label for="qrCamInput" style="display:inline-flex;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;background:white;color:#059669;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.08);border:none;margin:0">
+                  <span style="font-size:18px">📸</span> TOMAR FOTO QR (cámara trasera)
+                </label>
+                <input type="file" id="qrCamInput" accept="image/*" capture="environment" style="display:none">
+                <label for="qrCamFrontInput" style="display:inline-flex;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;background:rgba(255,255,255,.15);color:white;font-weight:800;font-size:13px;cursor:pointer;border:1.5px solid rgba(255,255,255,.35);margin:0">
+                  <span style="font-size:17px">🤳</span> Cámara Frontal
+                </label>
+                <input type="file" id="qrCamFrontInput" accept="image/*" capture="user" style="display:none">
+                <label for="qrUploadInput" style="display:inline-flex;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;background:rgba(255,255,255,.15);color:white;font-weight:800;font-size:13px;cursor:pointer;border:1.5px solid rgba(255,255,255,.35);margin:0">
+                  🖼️ Subir imagen guardada
+                </label>
+                <input type="file" id="qrUploadInput" accept="image/*" style="display:none">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scanner-wrap">
+          <div>
+            <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:12px;font-weight:800;color:var(--slate-600)">
+                📺 Método 2 · Cámara en vivo (streaming):
+              </div>
+              <div style="font-size:11px;color:#b45309;font-weight:700;background:#fef3c7;padding:4px 10px;border-radius:99px;border:1px solid #fde68a">
+                ⚠️ A veces se bloquea por Apps Script
+              </div>
+            </div>
+            <div class="scanner-video-box">
+              <video id="qrVideo" playsinline muted autoplay="0"></video>
+              <canvas id="qrCanvas" class="hidden"></canvas>
+              <div id="qrOverlay"><div class="qr-frame"></div></div>
+            </div>
+            <div class="scanner-controls" style="margin-top:12px;flex-wrap:wrap;gap:8px">
+              <button id="btnScanStart" class="btn btn-purple">&#128247; Encender Cámara en Vivo</button>
+              <button id="btnScanStop" class="btn btn-secondary hidden">Detener Cámara</button>
+              <button id="btnScanFlash" class="btn btn-outline-secondary hidden" title="Flash">&#9889; Flash</button>
+            </div>
+            <div style="margin-top:12px" class="token-input-row">
+              <input id="tokenManual" class="form-control" placeholder="O pega aquí un Token QR manualmente...">
+              <button id="btnTokenManual" class="btn btn-outline">Procesar Token</button>
+            </div>
+          </div>
+          <div class="scanner-info">
+            <div class="scanner-hint">
+              <b>&#128161; Cómo funciona:</b> Al escanear el QR, el sistema detecta AUTOMÁTICAMENTE si corresponde a
+              <b style="color:var(--green-600)">ENTRADA</b> (primer registro del día) o a
+              <b style="color:var(--red-600)">SALIDA</b> (segunda marca del día). Si la persona ya tiene ambos registros, crea un 2do turno.
+            </div>
+            <div class="last-read">
+              <h4>Última Lectura</h4>
+              <div id="lastReadBox" style="padding:12px;border-radius:8px;background:var(--slate-100);border:1px dashed var(--slate-300);color:var(--slate-500);text-align:center;font-size:12.5px;font-weight:600">
+                Aún no hay lecturas. Pulsa <b>"📸 TOMAR FOTO QR"</b> (método principal).
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB: USUARIOS (admin) ============ -->
+    <section id="tab-usuarios" class="tab-view panel">
+      <div class="panel-head"><h2><span class="ic">&#128101;</span> Gestión de Usuarios / Trabajadores</h2>
+        <div class="panel-actions">
+          <button id="btnToggleUserForm" class="btn btn-secondary">&#10133; Nuevo Usuario</button>
+        </div>
+      </div>
+      <div class="panel-body">
+
+        <div id="userForm" class="hidden" style="margin-bottom:16px;padding:16px;background:var(--slate-50);border-radius:12px;border:1px dashed var(--slate-300)">
+          <h4 style="font-size:13px;color:var(--slate-700);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="width:22px;height:22px;border-radius:5px;background:var(--navy-100);color:var(--navy-600);display:inline-flex;align-items:center;justify-content:center;font-size:11px">+</span> Crear nuevo usuario (administrador)</h4>
+          <div class="form-grid-3">
+            <div class="form-group" style="margin:0"><label>Cédula</label><input id="nuCedula" class="form-control" placeholder="Número identificación"></div>
+            <div class="form-group" style="margin:0"><label>Nombre Completo</label><input id="nuNombre" class="form-control" placeholder="Nombres Apellidos"></div>
+            <div class="form-group" style="margin:0"><label>Cargo / Área</label><input id="nuCargo" class="form-control" placeholder="Ej: Diseñador"></div>
+            <div class="form-group" style="margin:0">
+              <label>Rol</label>
+              <select id="nuRol" class="form-control">
+                <option value="TRABAJADOR">TRABAJADOR</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>&nbsp;</label>
+              <button id="btnCrearUsuario" class="btn btn-primary" style="white-space:nowrap">&#128190; Guardar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:44px">N°</th>
+                <th>Cédula</th>
+                <th>Nombre Completo</th>
+                <th>Cargo / Área</th>
+                <th>Rol</th>
+                <th>PIN</th>
+                <th style="width:140px">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody">
+              <tr><td colspan="7" class="empty-cell"><div class="empty"><div class="empty-icon">&#128300;</div><p>Cargando usuarios...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ TAB: ASISTENCIA (admin) ============ -->
+    <section id="tab-asistencia" class="tab-view panel">
+      <div class="panel-head"><h2><span class="ic">&#128203;</span> Registro Completo de Asistencia</h2>
+        <div class="panel-actions">
+          <button id="btnExportar" class="btn btn-outline">&#128190; Exportar CSV</button>
+          <button id="btnLimpiarFiltros" class="btn btn-outline-secondary">&#8635; Limpiar</button>
+        </div>
+      </div>
+      <div class="panel-body">
+
+        <div class="toolbar">
+          <div class="form-group" style="margin:0"><label>Trabajador</label><select id="fCedula" class="form-control"><option value="">Todos</option></select></div>
+          <div class="form-group" style="margin:0"><label>Fecha Desde</label><input id="fDesde" type="date" class="form-control"></div>
+          <div class="form-group" style="margin:0"><label>Fecha Hasta</label><input id="fHasta" type="date" class="form-control"></div>
+          <div></div>
+        </div>
+
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:40px">N°</th>
+                <th>Cédula</th>
+                <th>Nombre</th>
+                <th>Cargo</th>
+                <th>Fecha</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Horas</th>
+                <th>Medio</th>
+                <th>Estado</th>
+                <th style="width:70px">Del</th>
+              </tr>
+            </thead>
+            <tbody id="asisBody">
+              <tr><td colspan="11" class="empty-cell"><div class="empty"><div class="empty-icon">&#128300;</div><p>Cargando registros...</p></div></td></tr>
+            </tbody>
+            <tfoot>
+              <tr class="summary-row"><td colspan="7" class="sum-lbl">Total Horas Trabajadas en período:</td><td colspan="4" class="sum-val" id="totalHoras">0.00 h</td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ TAB: MI QR (todos) ============ -->
+    <section id="tab-miqr" class="tab-view panel">
+      <div class="panel-head"><h2><span class="ic">&#9609;</span> Mi Código QR Personal</h2>
+        <div class="panel-actions">
+          <button id="btnMyPrint" class="btn btn-outline">&#128424; Imprimir / Guardar PDF</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="mydata-wrap">
+          <div class="my-card">
+            <div class="row">
+              <div id="myAvatar2" class="my-avatar">?</div>
+              <div>
+                <div class="my-name" id="myName2">Usuario</div>
+                <div class="my-cargo" id="myCargo2">Cargo</div>
+              </div>
+            </div>
+            <div class="my-meta">
+              <div><span>Cédula</span><b id="myCed2">-</b></div>
+              <div><span>Rol</span><b id="myRole2">TRABAJADOR</b></div>
+              <div><span>Fecha Ingreso</span><b id="myFecha">-</b></div>
+              <div><span>ID Sistema</span><b style="font-size:12px;font-family:monospace" id="myToken">-</b></div>
+            </div>
+            <div style="height:12px"></div>
+            <div style="display:flex;gap:10px">
+              <button id="btnMyEntrada2" class="btn btn-green" style="flex:1">&#128308; Marcar Entrada</button>
+              <button id="btnMySalida2"  class="btn btn-red"   style="flex:1">&#128308; Marcar Salida</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="qr-holder">
+              <div id="qrMyHolderCanvas">
+                <!-- 🖼️ IMAGEN PNG DEL QR (AQUÍ SE VE SIEMPRE, incluso si canvas falla) -->
+                <img id="myQrImg" alt="Código QR Personal" style="width:360px;height:360px;max-width:100%;border-radius:8px;background:white;display:block;margin:0 auto;padding:8px;border:1px solid #e2e8f0">
+                <!-- Canvas oculto de respaldo (para compatibilidad) -->
+                <canvas id="myQrCanvas" width="360" height="360" style="display:none"></canvas>
+              </div>
+              <div id="qrMyFallback" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:360px;width:360px;max-width:100%;background:white;border-radius:10px">
+                <!-- Contenido se llena desde JS si falla QR -->
+              </div>
+              <div class="qr-user-info">
+                <div class="q-name" id="qrMyName">Usuario</div>
+                <div class="q-cedula" id="qrMyCed">Cédula</div>
+                <div class="q-cargo">Escanea este código al entrar y salir de la empresa.</div>
+              </div>
+              <div class="token-code" id="qrMyToken">CG...</div>
+            </div>
+            <p style="font-size:12px;color:var(--slate-500);text-align:center;line-height:1.6;margin-top:8px">
+              <b>&#128279; Este QR es ÚNICO por número de cédula.</b><br>
+              Imprímelo, plastícalo y úsalo como carnet digital, o guarda la imagen en tu celular.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB: MI ASISTENCIA (trabajador) ============ -->
+    <section id="tab-miasistencia" class="tab-view panel">
+      <div class="panel-head"><h2><span class="ic">&#128197;</span> Mi Historial de Asistencia</h2>
+        <div class="panel-actions">
+          <button id="btnMyExport" class="btn btn-outline">&#128190; Exportar CSV</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="toolbar toolbar-user">
+          <div class="form-group" style="margin:0"><label>Fecha Desde</label><input id="mfDesde" type="date" class="form-control"></div>
+          <div class="form-group" style="margin:0"><label>Fecha Hasta</label><input id="mfHasta" type="date" class="form-control"></div>
+          <button id="btnMyLimpiar" class="btn btn-outline-secondary" style="height:42px">&#8635; Limpiar</button>
+        </div>
+
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>N°</th><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Horas</th><th>Medio</th><th>Estado</th><th>Obs.</th>
+              </tr>
+            </thead>
+            <tbody id="myAsisBody">
+              <tr><td colspan="8" class="empty-cell"><div class="empty"><div class="empty-icon">&#128300;</div><p>Cargando tu historial...</p></div></td></tr>
+            </tbody>
+            <tfoot>
+              <tr class="summary-row"><td colspan="3" class="sum-lbl">Mis Horas Totales:</td><td colspan="5" class="sum-val" id="myTotalHoras">0.00 h</td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================================================= -->
+<!-- QR MODAL (popup para ver cualquier QR)                        -->
+<!-- ============================================================= -->
+<div id="qrModalHost"></div>
+
+  <script src="CONFIG.js?v=V2-20260803D"></script>
+  <script src="app.js?v=V2-20260803D"></script>
+<script>
+(function(){
+  try {
+    var cfg = (window.APP_CONFIG && window.APP_CONFIG.APPS_SCRIPT_URL) ? window.APP_CONFIG.APPS_SCRIPT_URL : '';
+    var banner = document.createElement('div');
+    var fondo, borde, color;
+    var nivel;
+
+    if (!cfg) {
+      nivel = 'ERROR';
+      fondo = 'linear-gradient(135deg,#b91c1c,#ef4444)'; borde = '#7f1d1d'; color='white';
+    } else {
+      // Detectar si la URL que CARGÓ es la BUENA (la nueva con AKfycbzcTA2JdmFowDnO6rDSQshDDwO4faJlUTSwniS0S_zxRBI4Vvheq697zTMAYlf3ASD6)
+      var esBuena = /AKfycbzcTA2JdmFowDnO6rDSQshDDwO4faJlUTSwniS0S_zxRBI4Vvheq697zTMAYlf3ASD6/.test(cfg);
+      var esVieja = /AKfycbxdfadm8o8PVWB2uHyz7GUehtVBe0e08ggy1NUsgcVJR5MLWP19zZn10FWD_gin20Jn7g/.test(cfg);
+      if (esBuena) {
+        nivel = 'OK';
+        fondo = 'linear-gradient(135deg,#047857,#10b981)'; borde = '#065f46'; color = 'white';
+      } else if (esVieja) {
+        nivel = 'URL VIEJA (caché)';
+        fondo = 'linear-gradient(135deg,#b45309,#f59e0b)'; borde = '#78350f'; color = 'white';
+      } else {
+        nivel = 'URL DESCONOCIDA — COMPRUEBA QUE SEA LA CORRECTA';
+        fondo = 'linear-gradient(135deg,#7c2d12,#ea580c)'; borde = '#431407'; color = 'white';
+      }
+    }
+
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999999;background:'+fondo+';color:'+color+';font-family:Inter,Arial,sans-serif;padding:16px 20px 18px 20px;font-size:13.5px;line-height:1.75;box-shadow:0 22px 44px rgba(0,0,0,.45);border-bottom:5px solid '+borde+';word-break:break-word';
+    var htmlUrl = cfg
+      ? '<div style="margin-top:6px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.25);font-family:ui-monospace,Consolas,monospace;font-size:12px;letter-spacing:.2px">'+cfg+'</div>'
+      : '<div style="margin-top:6px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.25);font-family:ui-monospace,Consolas,monospace;font-size:12px;font-style:italic">⚠️ (CONFIG.js NO se cargó. Tu navegador tiene caché vieja de GitHub Pages.)</div>';
+
+    banner.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+        '<div style="flex:1"><b style="font-size:17px">� ESTADO URL ACTIVA CONFIG.js ['+nivel+']</b><br>' +
+        '<small style="opacity:.92">Ésta es la URL QUE TU NAVEGADOR REALMENTE está usando (no lo que crees que subiste a GitHub). Si no coincide, es caché.</small>' +
+        htmlUrl +
+        (cfg && nivel !== 'OK'
+          ? '<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.22);font-size:12.5px"><b>💡 SOLUCIÓN:</b> cierra <u>todas</u> las pestañas abiertas de <code>github.io</code> → abre una PESTAÑA NUEVA → pega tu URL GitHub AÑADIENDO al final: <code style="background:rgba(255,255,255,.18);padding:2px 6px;border-radius:6px">?v=R-'+Date.now()+'</code> → pulsa Enter.</div>'
+          : '') +
+        '</div>' +
+        '<button onclick="this.parentElement.parentElement.remove()" style="flex-shrink:0;padding:6px 10px;border-radius:8px;border:0;background:rgba(255,255,255,.18);color:white;font-weight:700;cursor:pointer">Cerrar ✕</button>' +
+      '</div>';
+
+    document.body.appendChild(banner);
+  } catch(e){}
+})();
+</script>
+</body>
+</html>
